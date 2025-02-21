@@ -1,8 +1,43 @@
+# Import necessary tools and libraries
+from flask import Flask, render_template, url_for, redirect, flash, request, jsonify
+from flask_sqlalchemy import SQLAlchemy  # For database management
+from flask_migrate import Migrate        # For updating database structure
+from flask_login import LoginManager, current_user, login_user, logout_user, login_required  # For user authentication
+from config import Config               # App settings
+from extensions import db, login_manager # Database and login handling
+from forms import LoginForm, SignupForm, ProfileForm  # Forms for user input
+import logging  # For keeping track of what's happening in the app
+from routes.books import books_bp  # Book-related routes
+import os  # For interacting with the operating system
+from dotenv import load_dotenv  # For loading secret settings
+from Recommendation import BookRecommender
+from Recommendation_test import get_search_queries_from_preferences, fetch_books_from_google_api, process_google_books_response
+from datetime import datetime
+
+
+# Load secret settings from .env file
+load_dotenv()
+
+# Set up logging to help us track what's happening in our application
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Create the Flask application - this is the core of our website
 app = Flask(__name__)
 
+# Configure the application with necessary settings
+app.config.from_object(Config)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key')  # For security
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///bookbuddy.db')  # Database location
+app.config['GOOGLE_BOOKS_API_KEY'] = os.getenv('GOOGLE_BOOKS_API_KEY')  # Google Books API access
 
+# Set up our database and login system
+db.init_app(app)              # Connect to database
+migrate = Migrate(app, db)     # Setup database migrations
+login_manager.init_app(app)    # Initialize login functionality
+
+# Import our database models (must be after db initialization)
+from models import User, Book, ReadingList, UserPreferences
 
 # Add the books blueprint - this organizes our book-related routes
 app.register_blueprint(books_bp, url_prefix='/books')
