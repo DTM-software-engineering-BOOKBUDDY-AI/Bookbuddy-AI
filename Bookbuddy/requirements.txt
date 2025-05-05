@@ -5,8 +5,6 @@ email-validator
 flask-talisman
 Flask-Limiter
 bleach
-pytest
-pytest-cov
 google-api-python-client
 cachetools
 python-dotenv
