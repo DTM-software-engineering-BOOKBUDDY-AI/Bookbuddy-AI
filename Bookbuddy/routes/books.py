@@ -28,7 +28,6 @@ def search_books():
         return jsonify(books)
     except Exception as e:
         # If something goes wrong, log the error and return an error message
-        print(f"Search error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -63,7 +62,7 @@ def book_details(book_id):
     try:
         books_api = get_books_api()
         book = books_api.get_book_details(book_id)
-        return render_template('book_details.html', book=book)
+        return render_template('books_details.html', book=book)
     except Exception as e:
         flash('Error fetching book details', 'error')
         return redirect(url_for('homepage'))

@@ -81,7 +81,6 @@ def fetch_books_from_google_api(query, user_prefs=None, max_results=40):
         response.raise_for_status()
         return response.json().get('items', [])
     except Exception as e:
-        print(f"Error fetching books: {str(e)}")
         return []
 
 def process_google_books_response(books):
@@ -161,26 +160,20 @@ def test_recommendation_system():
         
         # Get user preferences
         user_prefs = recommender.get_user_preference_text(test_user_id)
-        print("\nUser Preferences:", user_prefs)
         
         # Get search queries
         search_queries = get_search_queries_from_preferences(user_prefs)
-        print("\nSearch Queries:", search_queries)
         
         # Fetch and process books
         all_books = []
         for query in search_queries:
-            print(f"\nFetching books for query: {query}")
             books = fetch_books_from_google_api(query, user_prefs)
             processed_books = process_google_books_response(books)
-            print(f"Found {len(processed_books)} matching books")
             all_books.extend(processed_books)
         
         # Remove duplicates based on book ID
         unique_books = {book['id']: book for book in all_books}.values()
         all_books = list(unique_books)
-        
-        print(f"\nTotal unique books found: {len(all_books)}")
         
         # Get recommendations
         recommendations = recommender.get_recommendations(
@@ -190,26 +183,9 @@ def test_recommendation_system():
         )
         
         # Print recommendations
-        print("\nTop 5 Book Recommendations:")
-        print("-" * 50)
         for i, rec in enumerate(recommendations, 1):
             book = rec['book']
             similarity = rec['similarity']
-            
-            print(f"\n{i}. {book['title']}")
-            print(f"   Authors: {', '.join(book['authors'])}")
-            print(f"   Similarity Score: {similarity:.2f}")
-            print(f"   Categories: {', '.join(book['categories']) if book['categories'] else 'N/A'}")
-            print(f"   Language: {book['language']}")
-            print(f"   Rating: {book['averageRating']}/5" if book['averageRating'] else "   Rating: N/A")
-            if book['description']:
-                # Truncate description to 150 characters
-                desc = book['description'][:150] + "..." if len(book['description']) > 150 else book['description']
-                print(f"   Description: {desc}")
-            
-            # Debug similarity calculation
-            recommender.debug_similarity(test_user_id, book)
-            print("-" * 50)  # Add separator between recommendations
 
 if __name__ == "__main__":
     test_recommendation_system()

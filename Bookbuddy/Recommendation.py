@@ -113,11 +113,9 @@ class BookRecommender:
                 return float(similarity[0][0])
 
             except ValueError as ve:
-                print(f"Vectorization error: {str(ve)}")
                 return 0.0
 
         except Exception as e:
-            print(f"Error calculating similarity: {str(e)}")
             return 0.0
 
     def get_recommendations(self, user_id, book_list, num_recommendations=5):
@@ -143,21 +141,12 @@ class BookRecommender:
             return sorted_recommendations[:num_recommendations]
 
         except Exception as e:
-            print(f"Error getting recommendations: {str(e)}")
             return []
 
     def debug_similarity(self, user_id, book_data):
         """Debug method to see how features are matching"""
         user_text = self.get_user_preference_text(user_id)
         book_text = self.get_book_text(book_data)
-        
-        print("\nUser Preferences:")
-        print("-" * 50)
-        print(user_text)
-        print("\nBook Features:")
-        print("-" * 50)
-        print(book_text)
-        print("\nSimilarity Score:", self.calculate_similarity(user_id, book_data))
 
     def process_google_books_response(self, books):
         """Process and clean the Google Books API response"""
@@ -241,4 +230,3 @@ if __name__ == "__main__":
     # Calculate similarity for a specific user and book
     user_id = 1  # Replace with actual user ID
     similarity = recommender.calculate_similarity(user_id, sample_book)
-    print(f"Similarity score: {similarity}")

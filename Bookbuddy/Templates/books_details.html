@@ -115,13 +115,6 @@ function addToReadingList(bookId, listType) {
         bookCover = coverImg.src;
     }
     
-    console.log("Adding book to reading list:", {
-        id: bookId,
-        title: bookTitle,
-        author: bookAuthor,
-        cover: bookCover,
-        status: listType
-    });
     
     fetch(`/add-to-reading-list`, {
         method: 'POST',
@@ -164,4 +157,4 @@ function updateButtonStates(activeStatus) {
     });
 }
 </script>
-{% endblock %} 
+{% endblock %}

@@ -56,6 +56,10 @@ def load_user(user_id):
 def homepage():
     return render_template("homepage.html")
 
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
+
 # Routes for different pages (like chapters in a book)
 # Each route handles a different page or action on our website
 
@@ -108,14 +112,8 @@ def recommendation():
             # Get user preferences
             user_prefs = recommender.get_user_preference_text(current_user.id)
             
-            # Log the full text of user preferences
-            logger.debug(f"User Preferences Text for User {current_user.id}: {user_prefs}")
-            
             # Get search queries
             search_queries = get_search_queries_from_preferences(user_prefs)
-            
-            # Log the search queries
-            logger.debug(f"Search Queries for User {current_user.id}: {search_queries}")
             
             # Fetch and process books
             all_books = []
@@ -164,10 +162,8 @@ def signup():
         return redirect(url_for('homepage'))
     
     form = SignupForm()
-    logger.debug(f"Form submitted: {request.method}")
     
     if form.validate_on_submit():
-        logger.debug("Form validated successfully")
         try:
             # Create new user with additional fields
             user = User(
@@ -177,16 +173,13 @@ def signup():
                 birthday=form.birthday.data
             )
             user.set_password(form.password.data)
-            logger.debug(f"Created user object: {user.username}")
             
             # Create preferences
             preferences = UserPreferences(user=user)
-            logger.debug("Created preferences object")
             
             # Add to database
             db.session.add(user)
             db.session.add(preferences)
-            logger.debug("Added user and preferences to session")
             
             # Commit changes
             db.session.commit()
@@ -201,7 +194,7 @@ def signup():
             flash(f'Error creating account: {str(e)}', 'error')
     else:
         if form.errors:
-            logger.debug(f"Form validation errors: {form.errors}")
+            pass
     
     return render_template('signup.html', form=form)
 
@@ -305,23 +298,18 @@ def my_lib():
         default_image = '01.jpg'  # Using an existing image from the products directory
         
         if not image_name:
-            app.logger.debug(f"No image name provided, using default: {default_image}")
             return default_image
         
         # If the image name contains a full URL or path, extract just the filename
         if '/' in image_name:
             image_name = image_name.split('/')[-1]
-            app.logger.debug(f"Extracted filename from path: {image_name}")
         
         # Check if the image exists in the static folder
         image_path = os.path.join(app.static_folder, 'images', 'products', image_name)
-        app.logger.debug(f"Checking image path: {image_path}")
         
         if os.path.exists(image_path):
-            app.logger.debug(f"Image exists: {image_name}")
             return image_name
         else:
-            app.logger.debug(f"Image does not exist: {image_name}, using default: {default_image}")
             return default_image
     
     # Format the data for the template
@@ -356,19 +344,8 @@ def my_lib():
     # Get reading statistics
     total_books = len(current_books) + len(want_to_read_books) + len(finished_books)
     
-    # Calculate average rating if you have a rating system
-    # This is a placeholder - modify according to your actual data model
-    avg_rating = 0
-    if finished_books:
-        avg_rating = 4.5  # Replace with actual calculation if you have ratings
-    
-    # Calculate total reading time (placeholder)
-    reading_time = total_books * 10  # Placeholder: 10 hours per book
-    
     library_stats = {
-        'total_books': total_books,
-        'avg_rating': avg_rating,
-        'reading_time': reading_time
+        'total_books': total_books
     }
     
     return render_template('my_lib.html', books=library_books, stats=library_stats)
@@ -448,9 +425,6 @@ def add_to_reading_list():
         external_book_id = data.get('book_id')
         status = data.get('status')
         
-        # Log the received data for debugging
-        app.logger.debug(f"Received data: {data}")
-        
         # Get book details from the request data
         book_title = data.get('title', 'Unknown Title')
         book_author = data.get('author', 'Unknown Author')
@@ -476,12 +450,9 @@ def add_to_reading_list():
                     
                     # Update book_cover to use the saved image
                     book_cover = image_filename
-                    app.logger.debug(f"Downloaded and saved cover image: {image_filename}")
                 else:
-                    app.logger.debug(f"Failed to download cover image from URL: {book_cover}")
                     book_cover = '01.jpg'  # Use default image
             except Exception as e:
-                app.logger.error(f"Error downloading cover image: {str(e)}")
                 book_cover = '01.jpg'  # Use default image
         # Clean up the cover image path if it's a relative URL
         elif book_cover and '/' in book_cover:
@@ -491,13 +462,9 @@ def add_to_reading_list():
         if book_cover and not (book_cover.startswith('http://') or book_cover.startswith('https://')):
             cover_path = os.path.join(app.static_folder, 'images', 'products', book_cover)
             if not os.path.exists(cover_path):
-                app.logger.debug(f"Cover image does not exist: {book_cover}, using default")
                 book_cover = '01.jpg'  # Use an existing image as default
         elif not book_cover:
             book_cover = '01.jpg'  # Use an existing image as default
-        
-        # Print the data for debugging
-        print(f"Book data: ID={external_book_id}, Title={book_title}, Author={book_author}, Cover={book_cover}")
         
         # First, check if we have a book with this external ID in the summary field
         existing_books = Book.query.filter(Book.summary.like(f"%External ID: {external_book_id}%")).all()
@@ -506,7 +473,6 @@ def add_to_reading_list():
             # Use the first matching book
             book = existing_books[0]
             book_id = book.id
-            app.logger.debug(f"Found existing book with external ID {external_book_id}, internal ID: {book_id}")
             
             # Always update the book details to ensure we have the latest information
             if book_title != 'Unknown Title':
@@ -515,11 +481,8 @@ def add_to_reading_list():
                 book.author = book_author
             if book_cover != '01.jpg':
                 book.cover_image = book_cover
-                
-            app.logger.debug(f"Updated book details: Title={book.title}, Author={book.author}, Cover={book.cover_image}")
         else:
             # Create a new book
-            app.logger.debug(f"Creating new book: Title={book_title}, Author={book_author}, Cover={book_cover}, External ID={external_book_id}")
             
             try:
                 new_book = Book(
@@ -531,9 +494,7 @@ def add_to_reading_list():
                 db.session.add(new_book)
                 db.session.flush()  # Get the auto-generated ID
                 book_id = new_book.id
-                app.logger.debug(f"Created new book with ID: {book_id}")
             except Exception as book_error:
-                app.logger.error(f"Error creating book: {str(book_error)}")
                 return jsonify({
                     'success': False,
                     'message': f"Error creating book: {str(book_error)}"
@@ -553,7 +514,6 @@ def add_to_reading_list():
             elif status == 'finished':
                 existing_entry.finished_at = datetime.utcnow()
             message = 'Reading status updated successfully'
-            app.logger.debug(f"Updated reading list entry: {existing_entry.id}")
         else:
             # Add new entry
             try:
@@ -565,16 +525,13 @@ def add_to_reading_list():
                 )
                 db.session.add(reading_list_item)
                 message = 'Book added to reading list successfully'
-                app.logger.debug(f"Created new reading list entry for user {current_user.id} and book {book_id}")
             except Exception as rl_error:
-                app.logger.error(f"Error creating reading list entry: {str(rl_error)}")
                 return jsonify({
                     'success': False,
                     'message': f"Error adding to reading list: {str(rl_error)}"
                 }), 500
             
         db.session.commit()
-        app.logger.debug("Database changes committed successfully")
         
         return jsonify({
             'success': True,
@@ -583,7 +540,6 @@ def add_to_reading_list():
         
     except Exception as e:
         db.session.rollback()
-        app.logger.error(f"Error in add-to-reading-list: {str(e)}")
         return jsonify({
             'success': False,
             'message': f"Error: {str(e)}"
